@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: embedding
+      POSTGRES_USER: embedding
+      POSTGRES_PASSWORD: embedding
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U embedding -d embedding"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: admin
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_started
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      until ollama list >/dev/null 2>&1; do sleep 2; done;
+      ollama pull nomic-embed-text
+
+  embedding-service:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      ollama-pull:
+        condition: service_completed_successfully
+    environment:
+      SERVER_PORT: 8080
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: embedding
+      POSTGRES_USER: embedding
+      POSTGRES_PASSWORD: embedding
+      DOCUMENT_SERVICE_BASE_URL: http://host.docker.internal:8081
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_EMBEDDING_MODEL: nomic-embed-text
+      EMBEDDING_PROVIDER: ollama
+      EMBEDDING_DIMENSION: 768
+      VECTOR_STORE_MODE: opensearch
+      OPENSEARCH_ENDPOINT: http://opensearch:9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      JOB_STORE_MODE: jpa
+      CHUNK_CLIENT_MODE: document-service
+      EVENT_PUBLISHER_MODE: logging
+      SQS_LISTENER_ENABLED: "false"
+      SECURITY_JWT_ENABLED: "false"
+    ports:
+      - "8080:8080"
+
+volumes:
+  ollama-data:

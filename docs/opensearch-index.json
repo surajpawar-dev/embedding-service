@@ -1,0 +1,81 @@
+{
+  "settings": {
+    "index": {
+      "knn": true,
+      "number_of_shards": 3,
+      "number_of_replicas": 1,
+      "refresh_interval": "30s",
+      "codec": "best_compression",
+      "knn.algo_param.ef_search": 128
+    },
+    "analysis": {
+      "analyzer": {
+        "rag_content_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "asciifolding", "stop"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "embeddingId": { "type": "keyword" },
+      "chunkId": { "type": "keyword" },
+      "documentId": { "type": "keyword" },
+      "chunkOrder": { "type": "integer" },
+      "content": {
+        "type": "text",
+        "analyzer": "rag_content_analyzer",
+        "fields": {
+          "keyword": { "type": "keyword", "ignore_above": 256 }
+        }
+      },
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 768,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "faiss",
+          "parameters": {
+            "ef_construction": 256,
+            "m": 32
+          }
+        }
+      },
+      "embeddingModel": { "type": "keyword" },
+      "embeddingDimension": { "type": "integer" },
+      "pageNumber": { "type": "integer" },
+      "section": {
+        "type": "text",
+        "analyzer": "rag_content_analyzer",
+        "fields": {
+          "keyword": { "type": "keyword", "ignore_above": 256 }
+        }
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "rag_content_analyzer",
+        "fields": {
+          "keyword": { "type": "keyword", "ignore_above": 256 }
+        }
+      },
+      "language": { "type": "keyword" },
+      "source": { "type": "keyword" },
+      "parentChunkId": { "type": "keyword" },
+      "metadata": { "type": "object", "enabled": true },
+      "documentChecksum": { "type": "keyword" },
+      "checksum": { "type": "keyword" },
+      "createdAt": { "type": "date" },
+      "updatedAt": { "type": "date" }
+    }
+  },
+  "aliases": {
+    "document_embeddings_read": {},
+    "document_embeddings_write": {
+      "is_write_index": true
+    }
+  }
+}

@@ -1,0 +1,106 @@
+spring:
+  application:
+    name: embedding-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:embedding}
+    username: ${POSTGRES_USER:embedding}
+    password: ${POSTGRES_PASSWORD:embedding}
+    hikari:
+      maximum-pool-size: ${POSTGRES_POOL_MAX:30}
+      minimum-idle: ${POSTGRES_POOL_MIN:5}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+embedding:
+  provider: ${EMBEDDING_PROVIDER:ollama}
+  model: ${OLLAMA_EMBEDDING_MODEL:${EMBEDDING_MODEL:nomic-embed-text}}
+  dimension: ${EMBEDDING_DIMENSION:768}
+  batch-size: ${EMBEDDING_BATCH_SIZE:128}
+  workers: ${EMBEDDING_WORKERS:8}
+  queue-capacity: ${EMBEDDING_QUEUE_CAPACITY:5000}
+  timeout: ${EMBEDDING_TIMEOUT:30s}
+
+chunk-client:
+  mode: ${CHUNK_CLIENT_MODE:document-service}
+
+app:
+  document-service:
+    base-url: ${DOCUMENT_SERVICE_BASE_URL:http://localhost:8081}
+    page-size: ${DOCUMENT_SERVICE_CHUNK_PAGE_SIZE:200}
+    request-timeout: ${DOCUMENT_SERVICE_REQUEST_TIMEOUT:PT30S}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    request-timeout: ${OLLAMA_REQUEST_TIMEOUT:PT30S}
+
+vector-store:
+  mode: ${VECTOR_STORE_MODE:opensearch}
+
+event-publisher:
+  mode: ${EVENT_PUBLISHER_MODE:sqs}
+
+job-store:
+  mode: ${JOB_STORE_MODE:jpa}
+
+opensearch:
+  endpoint: ${OPENSEARCH_ENDPOINT:http://localhost:9200}
+  username: ${OPENSEARCH_USERNAME:admin}
+  password: ${OPENSEARCH_PASSWORD:admin}
+  read-alias: ${OPENSEARCH_READ_ALIAS:document_embeddings_read}
+  write-alias: ${OPENSEARCH_WRITE_ALIAS:document_embeddings_write}
+  bulk:
+    batch-size: ${OPENSEARCH_BULK_BATCH_SIZE:500}
+    max-payload-mb: ${OPENSEARCH_BULK_MAX_PAYLOAD_MB:10}
+  bootstrap:
+    enabled: ${OPENSEARCH_BOOTSTRAP_ENABLED:true}
+    index-name: ${OPENSEARCH_INDEX_NAME:document_embeddings_v1}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  sqs:
+    listener-enabled: ${SQS_LISTENER_ENABLED:false}
+    document-ready-queue-url: ${DOCUMENT_READY_QUEUE_URL:}
+    chunks-created-queue-url: ${CHUNKS_CREATED_QUEUE_URL:}
+    embedding-created-queue-url: ${EMBEDDING_CREATED_QUEUE_URL:}
+    dead-letter-queue-url: ${EMBEDDING_DLQ_URL:}
+    max-messages: ${SQS_MAX_MESSAGES:10}
+    wait-time-seconds: ${SQS_WAIT_TIME_SECONDS:20}
+    visibility-timeout-seconds: ${SQS_VISIBILITY_TIMEOUT_SECONDS:300}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:false}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      embeddingProvider:
+        sliding-window-size: 50
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+      openSearch:
+        sliding-window-size: 100
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 20s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: embedding-service
