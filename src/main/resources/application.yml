@@ -68,6 +68,7 @@ aws:
   region: ${AWS_REGION:us-east-1}
   sqs:
     listener-enabled: ${SQS_LISTENER_ENABLED:false}
+    endpoint: ${AWS_SQS_ENDPOINT:}
     document-ready-queue-url: ${DOCUMENT_READY_QUEUE_URL:}
     chunks-created-queue-url: ${CHUNKS_CREATED_QUEUE_URL:}
     embedding-created-queue-url: ${EMBEDDING_CREATED_QUEUE_URL:}

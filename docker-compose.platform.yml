@@ -1,0 +1,201 @@
+name: document-rag-platform
+
+services:
+  localstack:
+    image: localstack/localstack:3
+    environment:
+      SERVICES: s3,sqs
+      AWS_DEFAULT_REGION: us-east-1
+      DEBUG: "0"
+    ports:
+      - "4566:4566"
+    volumes:
+      - "./localstack/init/ready.d:/etc/localstack/init/ready.d"
+      - "localstack-data:/var/lib/localstack"
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3 ls s3://documents >/dev/null 2>&1 && awslocal sqs get-queue-url --queue-name document-ready >/dev/null 2>&1 && awslocal sqs get-queue-url --queue-name embedding-created >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: Admin123!
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - "opensearch-data:/usr/share/opensearch/data"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  document-processing-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: document_processing
+      POSTGRES_USER: document_processing
+      POSTGRES_PASSWORD: document_processing
+    ports:
+      - "5433:5432"
+    volumes:
+      - "document-processing-db-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U document_processing -d document_processing"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  embedding-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: embedding
+      POSTGRES_USER: embedding
+      POSTGRES_PASSWORD: embedding
+    ports:
+      - "5434:5432"
+    volumes:
+      - "embedding-db-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U embedding -d embedding"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - "ollama-data:/root/.ollama"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_started
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "until ollama list >/dev/null 2>&1; do sleep 2; done; ollama pull nomic-embed-text"
+
+  document-processing-service:
+    build:
+      context: F:/document-processing-service/document-processing-service
+    depends_on:
+      document-processing-db:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      DATABASE_URL: jdbc:postgresql://document-processing-db:5432/document_processing?options=-c%20TimeZone=UTC
+      DATABASE_USERNAME: document_processing
+      DATABASE_PASSWORD: document_processing
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_S3_BUCKET: documents
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_PATH_STYLE_ACCESS_ENABLED: "true"
+      DOCUMENT_EVENT_PUBLISHER: sqs
+      AWS_SQS_ENDPOINT: http://localstack:4566
+      DOCUMENT_READY_QUEUE_URL: http://localstack:4566/000000000000/document-ready
+    ports:
+      - "8081:8080"
+
+  embedding-service:
+    build:
+      context: .
+    depends_on:
+      embedding-db:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      ollama-pull:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      document-processing-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8080
+      POSTGRES_HOST: embedding-db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: embedding
+      POSTGRES_USER: embedding
+      POSTGRES_PASSWORD: embedding
+      DOCUMENT_SERVICE_BASE_URL: http://document-processing-service:8080
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_EMBEDDING_MODEL: nomic-embed-text
+      EMBEDDING_PROVIDER: ollama
+      EMBEDDING_DIMENSION: 768
+      EMBEDDING_BATCH_SIZE: 128
+      VECTOR_STORE_MODE: opensearch
+      OPENSEARCH_ENDPOINT: http://opensearch:9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      JOB_STORE_MODE: jpa
+      CHUNK_CLIENT_MODE: document-service
+      EVENT_PUBLISHER_MODE: sqs
+      SQS_LISTENER_ENABLED: "true"
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_SQS_ENDPOINT: http://localstack:4566
+      DOCUMENT_READY_QUEUE_URL: http://localstack:4566/000000000000/document-ready
+      EMBEDDING_CREATED_QUEUE_URL: http://localstack:4566/000000000000/embedding-created
+      SECURITY_JWT_ENABLED: "false"
+    ports:
+      - "8082:8080"
+
+  upload-platform:
+    build:
+      context: C:/Users/ASUS/OneDrive/Desktop/MyCodes/UploadProject/upload-platform
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      document-processing-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8080
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_S3_ENABLED: "true"
+      AWS_S3_BUCKET: documents
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_PATH_STYLE_ACCESS_ENABLED: "true"
+      OPENSEARCH_ENABLED: "true"
+      OPENSEARCH_URIS: http://opensearch:9200
+      OPENSEARCH_USERNAME: ""
+      OPENSEARCH_PASSWORD: ""
+      DOCUMENT_PROCESSING_ENABLED: "true"
+      DOCUMENT_PROCESSING_BASE_URL: http://document-processing-service:8080
+      DOCUMENT_PROCESSING_LANGUAGE: en
+    ports:
+      - "8080:8080"
+
+volumes:
+  localstack-data:
+  opensearch-data:
+  document-processing-db-data:
+  embedding-db-data:
+  ollama-data:

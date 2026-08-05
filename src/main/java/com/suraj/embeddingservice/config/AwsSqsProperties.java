@@ -13,6 +13,7 @@ public record AwsSqsProperties(
 ) {
     public record Sqs(
             boolean listenerEnabled,
+            String endpoint,
             String documentReadyQueueUrl,
             String chunksCreatedQueueUrl,
             String embeddingCreatedQueueUrl,

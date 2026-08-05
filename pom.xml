@@ -11,8 +11,8 @@
 	<groupId>com.suraj</groupId>
 	<artifactId>embedding-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>embedding-service</name>
+	<description>Embedding generation, vector indexing, and semantic search service for document chunks</description>
 	<url/>
 	<licenses>
 		<license/>
