@@ -48,7 +48,7 @@ services:
       until ollama list >/dev/null 2>&1; do sleep 2; done;
       ollama pull nomic-embed-text
 
-  embedding-service:
+  rag-embedding-service:
     build: .
     depends_on:
       postgres:

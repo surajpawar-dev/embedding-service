@@ -103,7 +103,7 @@ Important: `OLLAMA_EMBEDDING_MODEL` and `EMBEDDING_DIMENSION` must match the mod
 Use this when you want the local stack to behave like production wiring:
 
 ```powershell
-cd F:\embedding-service
+cd C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-embedding-service
 docker compose -f docker-compose.platform.yml up --build
 ```
 
@@ -111,9 +111,9 @@ This starts:
 
 | Component | Host port | Purpose |
 |---|---:|---|
-| `upload-platform` | `8080` | Accepts uploads, stores files in S3, triggers processing |
-| `document-processing-service` | `8081` | Reads PDFs from S3, cleans/chunks text, stores chunks |
-| `embedding-service` | `8082` | Consumes SQS events, embeds chunks, stores/searches vectors |
+| `rag-upload-service` | `8080` | Accepts uploads, stores files in S3, triggers processing |
+| `rag-document-processing-service` | `8081` | Reads PDFs from S3, cleans/chunks text, stores chunks |
+| `rag-embedding-service` | `8082` | Consumes SQS events, embeds chunks, stores/searches vectors |
 | LocalStack | `4566` | Local S3 bucket `documents` and SQS queues |
 | OpenSearch | `9200` | Upload metadata and embedding vectors |
 | Ollama | `11434` | Local embedding model runtime |
@@ -122,17 +122,17 @@ This starts:
 
 Expected local flow:
 
-1. Upload a PDF through `upload-platform`.
-2. `upload-platform` stores the PDF in LocalStack S3 and calls `document-processing-service`.
-3. `document-processing-service` extracts, cleans, chunks, persists, then publishes `document-ready` to SQS.
-4. `embedding-service` consumes the event, fetches chunks over HTTP, generates Ollama embeddings, and upserts vectors into OpenSearch.
+1. Upload a PDF through `rag-upload-service`.
+2. `rag-upload-service` stores the PDF in LocalStack S3 and calls `rag-document-processing-service`.
+3. `rag-document-processing-service` extracts, cleans, chunks, persists, then publishes `document-ready` to SQS.
+4. `rag-embedding-service` consumes the event, fetches chunks over HTTP, generates Ollama embeddings, and upserts vectors into OpenSearch.
 5. Query vectors through `POST http://localhost:8082/api/v1/embeddings/search`.
 
 The compose file uses source builds for all three services:
 
-- `F:\embedding-service`
-- `F:\document-processing-service\document-processing-service`
-- `C:\Users\ASUS\OneDrive\Desktop\MyCodes\UploadProject\upload-platform`
+- `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-embedding-service`
+- `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-document-processing-service`
+- `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-upload-service`
 
 Before running, make sure Docker Desktop is running and the ports above are free. The first run can take time because Docker pulls PostgreSQL, OpenSearch, LocalStack, Ollama, and the `nomic-embed-text` model.
 
@@ -178,7 +178,7 @@ Manual schema/index files are also available for controlled production rollout:
 6. Start the service:
 
 ```bash
-java -jar target/embedding-service-0.0.1-SNAPSHOT.jar
+java -jar target/rag-embedding-service-0.0.1-SNAPSHOT.jar
 ```
 
 ## Production Deployment Checklist

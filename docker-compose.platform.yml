@@ -91,9 +91,9 @@ services:
     command:
       - "until ollama list >/dev/null 2>&1; do sleep 2; done; ollama pull nomic-embed-text"
 
-  document-processing-service:
+  rag-document-processing-service:
     build:
-      context: F:/document-processing-service/document-processing-service
+      context: ../rag-document-processing-service
     depends_on:
       document-processing-db:
         condition: service_healthy
@@ -117,7 +117,7 @@ services:
     ports:
       - "8081:8080"
 
-  embedding-service:
+  rag-embedding-service:
     build:
       context: .
     depends_on:
@@ -131,7 +131,7 @@ services:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
-      document-processing-service:
+      rag-document-processing-service:
         condition: service_started
     environment:
       SERVER_PORT: 8080
@@ -140,7 +140,7 @@ services:
       POSTGRES_DB: embedding
       POSTGRES_USER: embedding
       POSTGRES_PASSWORD: embedding
-      DOCUMENT_SERVICE_BASE_URL: http://document-processing-service:8080
+      DOCUMENT_SERVICE_BASE_URL: http://rag-document-processing-service:8080
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_EMBEDDING_MODEL: nomic-embed-text
       EMBEDDING_PROVIDER: ollama
@@ -164,15 +164,15 @@ services:
     ports:
       - "8082:8080"
 
-  upload-platform:
+  rag-upload-service:
     build:
-      context: C:/Users/ASUS/OneDrive/Desktop/MyCodes/UploadProject/upload-platform
+      context: ../rag-upload-service
     depends_on:
       opensearch:
         condition: service_healthy
       localstack:
         condition: service_healthy
-      document-processing-service:
+      rag-document-processing-service:
         condition: service_started
     environment:
       SERVER_PORT: 8080
@@ -188,7 +188,7 @@ services:
       OPENSEARCH_USERNAME: ""
       OPENSEARCH_PASSWORD: ""
       DOCUMENT_PROCESSING_ENABLED: "true"
-      DOCUMENT_PROCESSING_BASE_URL: http://document-processing-service:8080
+      DOCUMENT_PROCESSING_BASE_URL: http://rag-document-processing-service:8080
       DOCUMENT_PROCESSING_LANGUAGE: en
     ports:
       - "8080:8080"

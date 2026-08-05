@@ -1,6 +1,6 @@
 spring:
   application:
-    name: embedding-service
+    name: rag-embedding-service
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:embedding}
     username: ${POSTGRES_USER:embedding}
@@ -104,4 +104,4 @@ management:
         enabled: true
   metrics:
     tags:
-      application: embedding-service
+      application: rag-embedding-service

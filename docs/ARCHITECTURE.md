@@ -807,7 +807,7 @@ Use `application.yml`, not only `application.properties`, for structured product
 ```yaml
 spring:
   application:
-    name: embedding-service
+    name: rag-embedding-service
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:embedding}
     username: ${POSTGRES_USER:embedding}
@@ -899,7 +899,7 @@ management:
       probability: 0.1
   metrics:
     tags:
-      application: embedding-service
+      application: rag-embedding-service
 
 logging:
   level:
@@ -1017,7 +1017,7 @@ Load tests:
 ```dockerfile
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY target/embedding-service.jar app.jar
+COPY target/rag-embedding-service.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
 ```
@@ -1026,7 +1026,7 @@ ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
 
 ```yaml
 services:
-  embedding-service:
+  rag-embedding-service:
     build: .
     ports:
       - "8080:8080"
@@ -1066,28 +1066,28 @@ services:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: embedding-service
+  name: rag-embedding-service
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: embedding-service
+      app: rag-embedding-service
   template:
     metadata:
       labels:
-        app: embedding-service
+        app: rag-embedding-service
     spec:
-      serviceAccountName: embedding-service
+      serviceAccountName: rag-embedding-service
       containers:
-        - name: embedding-service
-          image: company/embedding-service:1.0.0
+        - name: rag-embedding-service
+          image: company/rag-embedding-service:1.0.0
           ports:
             - containerPort: 8080
           envFrom:
             - secretRef:
-                name: embedding-service-secrets
+                name: rag-embedding-service-secrets
             - configMapRef:
-                name: embedding-service-config
+                name: rag-embedding-service-config
           resources:
             requests:
               cpu: "1"
@@ -1111,7 +1111,7 @@ spec:
 replicaCount: 3
 
 image:
-  repository: company/embedding-service
+  repository: company/rag-embedding-service
   tag: "1.0.0"
 
 resources:

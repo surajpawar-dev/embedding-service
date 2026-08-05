@@ -6,14 +6,14 @@ The local platform is made of three Spring services:
 
 | Service | Project path | Responsibility |
 |---|---|---|
-| `upload-platform` | `C:\Users\ASUS\OneDrive\Desktop\MyCodes\UploadProject\upload-platform` | Upload API, S3 object storage, upload metadata, processing trigger |
-| `document-processing-service` | `F:\document-processing-service\document-processing-service` | PDF reading, text cleanup, chunking, chunk persistence, document-ready event |
-| `embedding-service` | `F:\embedding-service` | SQS consumer, chunk fetch, Ollama embeddings, OpenSearch vectors, retrieval API |
+| `rag-upload-service` | `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-upload-service` | Upload API, S3 object storage, upload metadata, processing trigger |
+| `rag-document-processing-service` | `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-document-processing-service` | PDF reading, text cleanup, chunking, chunk persistence, document-ready event |
+| `rag-embedding-service` | `C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-embedding-service` | SQS consumer, chunk fetch, Ollama embeddings, OpenSearch vectors, retrieval API |
 
 ## Start Everything
 
 ```powershell
-cd F:\embedding-service
+cd C:\Users\ASUS\OneDrive\Desktop\mycodes\document-rag-platform\rag-embedding-service
 docker compose -f docker-compose.platform.yml up --build
 ```
 
@@ -41,11 +41,11 @@ docker compose -f docker-compose.platform.yml up --build
 
 ## Event Flow
 
-1. `upload-platform` receives a PDF upload and writes the file to S3.
-2. `upload-platform` calls `POST /documents/process` on `document-processing-service`.
-3. `document-processing-service` reads the PDF from S3, extracts text, cleans it, chunks it, and stores document/chunk rows.
-4. `document-processing-service` publishes a `document-ready` SQS message.
-5. `embedding-service` consumes the SQS message, fetches chunks page by page, embeds with Ollama, and writes vectors to OpenSearch.
+1. `rag-upload-service` receives a PDF upload and writes the file to S3.
+2. `rag-upload-service` calls `POST /documents/process` on `rag-document-processing-service`.
+3. `rag-document-processing-service` reads the PDF from S3, extracts text, cleans it, chunks it, and stores document/chunk rows.
+4. `rag-document-processing-service` publishes a `document-ready` SQS message.
+5. `rag-embedding-service` consumes the SQS message, fetches chunks page by page, embeds with Ollama, and writes vectors to OpenSearch.
 
 ## Production Replacement Points
 

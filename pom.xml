@@ -8,10 +8,10 @@
 		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.suraj</groupId>
-	<artifactId>embedding-service</artifactId>
+	<groupId>com.suraj.rag</groupId>
+	<artifactId>rag-embedding-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>embedding-service</name>
+	<name>rag-embedding-service</name>
 	<description>Embedding generation, vector indexing, and semantic search service for document chunks</description>
 	<url/>
 	<licenses>
