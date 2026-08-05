@@ -21,9 +21,7 @@ public class MockEmbeddingGeneratorAdapter implements EmbeddingGeneratorPort {
 
     @Override
     public List<float[]> embed(List<String> inputs, String model) {
-        return inputs.stream()
-                .map(this::deterministicVector)
-                .toList();
+        return inputs.stream().map(this::deterministicVector).toList();
     }
 
     private float[] deterministicVector(String input) {
@@ -38,7 +36,8 @@ public class MockEmbeddingGeneratorAdapter implements EmbeddingGeneratorPort {
 
     private byte[] sha256(String value) {
         try {
-            return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available", exception);
         }

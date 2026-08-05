@@ -20,14 +20,20 @@ public class EmbeddingMetrics {
     private final Timer chunkFetchLatency;
 
     public EmbeddingMetrics(MeterRegistry meterRegistry) {
-        this.chunksProcessed = Counter.builder(MetricsNames.EMBEDDING_CHUNKS_PROCESSED_TOTAL).register(meterRegistry);
-        this.chunksFailed = Counter.builder(MetricsNames.EMBEDDING_CHUNKS_FAILED_TOTAL).register(meterRegistry);
-        this.jobsCompleted = Counter.builder("embedding_jobs_completed_total").register(meterRegistry);
+        this.chunksProcessed =
+                Counter.builder(MetricsNames.EMBEDDING_CHUNKS_PROCESSED_TOTAL)
+                        .register(meterRegistry);
+        this.chunksFailed =
+                Counter.builder(MetricsNames.EMBEDDING_CHUNKS_FAILED_TOTAL).register(meterRegistry);
+        this.jobsCompleted =
+                Counter.builder("embedding_jobs_completed_total").register(meterRegistry);
         this.jobsFailed = Counter.builder("embedding_jobs_failed_total").register(meterRegistry);
         this.ollamaLatency = Timer.builder("ollama_embedding_latency").register(meterRegistry);
-        this.vectorWriteLatency = Timer.builder("vector_store_write_latency").register(meterRegistry);
+        this.vectorWriteLatency =
+                Timer.builder("vector_store_write_latency").register(meterRegistry);
         this.vectorSearchLatency = Timer.builder("vector_search_latency").register(meterRegistry);
-        this.chunkFetchLatency = Timer.builder("document_chunk_fetch_latency").register(meterRegistry);
+        this.chunkFetchLatency =
+                Timer.builder("document_chunk_fetch_latency").register(meterRegistry);
     }
 
     public void incrementProcessed() {

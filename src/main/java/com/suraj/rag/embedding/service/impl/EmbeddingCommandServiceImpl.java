@@ -36,8 +36,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, CreateBatchEmbeddingsUseCase,
-        HandleChunksCreatedEventUseCase, DeleteEmbeddingUseCase, StartDocumentEmbeddingUseCase {
+public class EmbeddingCommandServiceImpl
+        implements CreateEmbeddingUseCase,
+                CreateBatchEmbeddingsUseCase,
+                HandleChunksCreatedEventUseCase,
+                DeleteEmbeddingUseCase,
+                StartDocumentEmbeddingUseCase {
 
     private final EmbeddingProperties embeddingProperties;
     private final ChunkClientPort chunkClientPort;
@@ -66,8 +70,7 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
             EmbeddingEventMapper eventMapper,
             CorrelationIdProvider correlationIdProvider,
             OperationalLogPort operationalLogPort,
-            EmbeddingMetrics metrics
-    ) {
+            EmbeddingMetrics metrics) {
         this.embeddingProperties = embeddingProperties;
         this.chunkClientPort = chunkClientPort;
         this.embeddingGeneratorPort = embeddingGeneratorPort;
@@ -86,7 +89,11 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
     @Override
     @Transactional
     public EmbeddingResponse create(CreateEmbeddingRequest request) {
-        return createBatch(new BatchEmbeddingRequest(request.documentId(), List.of(request.chunkId()), request.embeddingModel()))
+        return createBatch(
+                        new BatchEmbeddingRequest(
+                                request.documentId(),
+                                List.of(request.chunkId()),
+                                request.embeddingModel()))
                 .getFirst();
     }
 
@@ -95,8 +102,11 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
     public List<EmbeddingResponse> createBatch(BatchEmbeddingRequest request) {
         requestValidator.validateBatchRequest(request);
         String model = resolveModel(request.embeddingModel());
-        List<ChunkResponse> chunks = metrics.recordChunkFetch(() -> chunkClientPort.fetchChunks(request.documentId(),
-                request.chunkIds()));
+        List<ChunkResponse> chunks =
+                metrics.recordChunkFetch(
+                        () ->
+                                chunkClientPort.fetchChunks(
+                                        request.documentId(), request.chunkIds()));
         requestValidator.validateFetchedChunks(request, chunks);
         return processChunks(request.documentId(), chunks, model, null).responses();
     }
@@ -115,26 +125,53 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
 
     private DocumentEmbeddingResponse embedDocument(UUID documentId, String documentChecksum) {
         String model = resolveModel(null);
-        List<ChunkResponse> chunks = metrics.recordChunkFetch(() -> chunkClientPort.fetchAllChunks(documentId));
-        requestValidator.validateFetchedChunks(new BatchEmbeddingRequest(documentId,
-                chunks.stream().map(ChunkResponse::id).toList(), model), chunks);
+        List<ChunkResponse> chunks =
+                metrics.recordChunkFetch(() -> chunkClientPort.fetchAllChunks(documentId));
+        requestValidator.validateFetchedChunks(
+                new BatchEmbeddingRequest(
+                        documentId, chunks.stream().map(ChunkResponse::id).toList(), model),
+                chunks);
         vectorStorePort.deleteByDocumentIdAndModel(documentId, model);
         ProcessingResult result = processChunks(documentId, chunks, model, documentChecksum);
-        return new DocumentEmbeddingResponse(result.jobId(), documentId, result.responses().size(), documentChecksum, model,
-                embeddingProperties.dimension(), result.status(), Instant.now());
+        return new DocumentEmbeddingResponse(
+                result.jobId(),
+                documentId,
+                result.responses().size(),
+                documentChecksum,
+                model,
+                embeddingProperties.dimension(),
+                result.status(),
+                Instant.now());
     }
 
-    private ProcessingResult processChunks(UUID documentId, List<ChunkResponse> chunks, String model,
-            String documentChecksum) {
+    private ProcessingResult processChunks(
+            UUID documentId, List<ChunkResponse> chunks, String model, String documentChecksum) {
         String correlationId = correlationIdProvider.currentOrNew();
-        UUID jobId = jobStorePort.createJob(documentId, chunks.size(), model,
-                embeddingProperties.dimension(), correlationId);
-        operationalLogPort.audit(jobId, documentId, null, "JOB_RECEIVED", null, EmbeddingStatus.RECEIVED,
-                "Embedding job accepted", correlationId);
+        UUID jobId =
+                jobStorePort.createJob(
+                        documentId,
+                        chunks.size(),
+                        model,
+                        embeddingProperties.dimension(),
+                        correlationId);
+        operationalLogPort.audit(
+                jobId,
+                documentId,
+                null,
+                "JOB_RECEIVED",
+                null,
+                EmbeddingStatus.RECEIVED,
+                "Embedding job accepted",
+                correlationId);
         try {
-            List<float[]> embeddings = metrics.recordOllama(() -> embeddingGeneratorPort.embed(
-                    chunks.stream().map(ChunkResponse::content).toList(), model));
-            vectorValidator.validateEmbeddingResult(chunks.size(), embeddings, embeddingProperties.dimension());
+            List<float[]> embeddings =
+                    metrics.recordOllama(
+                            () ->
+                                    embeddingGeneratorPort.embed(
+                                            chunks.stream().map(ChunkResponse::content).toList(),
+                                            model));
+            vectorValidator.validateEmbeddingResult(
+                    chunks.size(), embeddings, embeddingProperties.dimension());
             List<EmbeddingVector> vectors = new ArrayList<>(chunks.size());
             List<EmbeddingResponse> responses = new ArrayList<>(chunks.size());
             List<UUID> embeddingIds = new ArrayList<>(chunks.size());
@@ -143,32 +180,81 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
                 ChunkResponse chunk = chunks.get(i);
                 UUID embeddingId = UUID.randomUUID();
                 embeddingIds.add(embeddingId);
-                vectors.add(vectorMapper.toVector(chunk, embeddings.get(i), embeddingId, model, embeddingProperties.dimension(),
-                        documentChecksum));
-                jobStorePort.markChunk(jobId, chunk.documentId(), chunk.id(), embeddingId, model,
-                        embeddingProperties.dimension(), chunk.checksum(), EmbeddingStatus.COMPLETED);
-                responses.add(new EmbeddingResponse(jobId, chunk.documentId(), chunk.id(), embeddingId, model,
-                        embeddingProperties.dimension(), EmbeddingStatus.COMPLETED, Instant.now()));
+                vectors.add(
+                        vectorMapper.toVector(
+                                chunk,
+                                embeddings.get(i),
+                                embeddingId,
+                                model,
+                                embeddingProperties.dimension(),
+                                documentChecksum));
+                jobStorePort.markChunk(
+                        jobId,
+                        chunk.documentId(),
+                        chunk.id(),
+                        embeddingId,
+                        model,
+                        embeddingProperties.dimension(),
+                        chunk.checksum(),
+                        EmbeddingStatus.COMPLETED);
+                responses.add(
+                        new EmbeddingResponse(
+                                jobId,
+                                chunk.documentId(),
+                                chunk.id(),
+                                embeddingId,
+                                model,
+                                embeddingProperties.dimension(),
+                                EmbeddingStatus.COMPLETED,
+                                Instant.now()));
             }
 
             metrics.recordVectorWrite(() -> vectorStorePort.upsertAll(vectors));
             jobStorePort.completeJob(jobId, EmbeddingStatus.READY);
             metrics.incrementProcessed(chunks.size());
             metrics.incrementJobsCompleted();
-            operationalLogPort.audit(jobId, documentId, null, "JOB_READY", EmbeddingStatus.RECEIVED,
-                    EmbeddingStatus.READY, "Embedding job completed", correlationId);
-            eventPublisherPort.publish(eventMapper.toCreatedEvent(documentId, jobId, embeddingIds,
-                    chunks.stream().map(ChunkResponse::id).toList(), model, embeddingProperties.dimension(),
-                    EmbeddingStatus.READY, correlationId));
+            operationalLogPort.audit(
+                    jobId,
+                    documentId,
+                    null,
+                    "JOB_READY",
+                    EmbeddingStatus.RECEIVED,
+                    EmbeddingStatus.READY,
+                    "Embedding job completed",
+                    correlationId);
+            eventPublisherPort.publish(
+                    eventMapper.toCreatedEvent(
+                            documentId,
+                            jobId,
+                            embeddingIds,
+                            chunks.stream().map(ChunkResponse::id).toList(),
+                            model,
+                            embeddingProperties.dimension(),
+                            EmbeddingStatus.READY,
+                            correlationId));
             return new ProcessingResult(jobId, responses, EmbeddingStatus.READY);
         } catch (RuntimeException exception) {
             jobStorePort.failJob(jobId, exception.getMessage());
             metrics.incrementFailed(Math.max(1, chunks.size()));
             metrics.incrementJobsFailed();
-            operationalLogPort.failure(jobId, documentId, null, failureStage(exception), exception.getClass().getSimpleName(),
-                    exception.getMessage(), null, false);
-            operationalLogPort.audit(jobId, documentId, null, "JOB_FAILED", EmbeddingStatus.RECEIVED,
-                    EmbeddingStatus.FAILED, exception.getMessage(), correlationId);
+            operationalLogPort.failure(
+                    jobId,
+                    documentId,
+                    null,
+                    failureStage(exception),
+                    exception.getClass().getSimpleName(),
+                    exception.getMessage(),
+                    null,
+                    false);
+            operationalLogPort.audit(
+                    jobId,
+                    documentId,
+                    null,
+                    "JOB_FAILED",
+                    EmbeddingStatus.RECEIVED,
+                    EmbeddingStatus.FAILED,
+                    exception.getMessage(),
+                    correlationId);
             throw exception;
         }
     }
@@ -186,7 +272,9 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
     }
 
     private String resolveModel(String requestedModel) {
-        return requestedModel == null || requestedModel.isBlank() ? embeddingProperties.model() : requestedModel;
+        return requestedModel == null || requestedModel.isBlank()
+                ? embeddingProperties.model()
+                : requestedModel;
     }
 
     private FailureStage failureStage(RuntimeException exception) {
@@ -207,6 +295,6 @@ public class EmbeddingCommandServiceImpl implements CreateEmbeddingUseCase, Crea
         return FailureStage.UNKNOWN;
     }
 
-    private record ProcessingResult(UUID jobId, List<EmbeddingResponse> responses, EmbeddingStatus status) {
-    }
+    private record ProcessingResult(
+            UUID jobId, List<EmbeddingResponse> responses, EmbeddingStatus status) {}
 }

@@ -18,29 +18,33 @@ public class LocalChunkClientAdapter implements ChunkClientPort {
     @Override
     public List<ChunkResponse> fetchChunks(UUID documentId, List<UUID> chunkIds) {
         return IntStream.range(0, chunkIds.size())
-                .mapToObj(index -> {
-                    UUID chunkId = chunkIds.get(index);
-                    return new ChunkResponse(
-                        chunkId,
-                        documentId,
-                        index,
-                        "Local development chunk content for " + chunkId,
-                        "local-checksum-" + chunkId,
-                        null,
-                        null,
-                        null,
-                        "en",
-                        "local",
-                        null,
-                        Map.of(),
-                        Instant.now()
-                );
-                })
+                .mapToObj(
+                        index -> {
+                            UUID chunkId = chunkIds.get(index);
+                            return new ChunkResponse(
+                                    chunkId,
+                                    documentId,
+                                    index,
+                                    "Local development chunk content for " + chunkId,
+                                    "local-checksum-" + chunkId,
+                                    null,
+                                    null,
+                                    null,
+                                    "en",
+                                    "local",
+                                    null,
+                                    Map.of(),
+                                    Instant.now());
+                        })
                 .toList();
     }
 
     @Override
     public List<ChunkResponse> fetchAllChunks(UUID documentId) {
-        return fetchChunks(documentId, List.of(UUID.nameUUIDFromBytes(documentId.toString().getBytes(StandardCharsets.UTF_8))));
+        return fetchChunks(
+                documentId,
+                List.of(
+                        UUID.nameUUIDFromBytes(
+                                documentId.toString().getBytes(StandardCharsets.UTF_8))));
     }
 }

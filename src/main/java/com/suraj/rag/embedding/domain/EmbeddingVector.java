@@ -22,6 +22,4 @@ public record EmbeddingVector(
         Map<String, Object> metadata,
         String documentChecksum,
         String checksum,
-        Instant createdAt
-) {
-}
+        Instant createdAt) {}

@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+app:
+  document-service:
+    base-url: ${DOCUMENT_SERVICE_BASE_URL}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL}
+
+opensearch:
+  endpoint: ${OPENSEARCH_ENDPOINT}
+  username: ${OPENSEARCH_USERNAME}
+  password: ${OPENSEARCH_PASSWORD}
+
+aws:
+  region: ${AWS_REGION}
+  sqs:
+    endpoint: ${AWS_SQS_ENDPOINT:}
+    listener-enabled: ${SQS_LISTENER_ENABLED:true}
+    document-ready-queue-url: ${DOCUMENT_READY_QUEUE_URL}
+    embedding-created-queue-url: ${EMBEDDING_CREATED_QUEUE_URL}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:true}

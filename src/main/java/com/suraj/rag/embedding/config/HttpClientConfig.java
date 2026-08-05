@@ -9,9 +9,9 @@ import org.springframework.web.client.RestTemplate;
 public class HttpClientConfig {
 
     @Bean
-    RestTemplate documentServiceRestTemplate(RestTemplateBuilder builder, DocumentServiceProperties properties) {
-        return builder
-                .rootUri(properties.baseUrl())
+    RestTemplate documentServiceRestTemplate(
+            RestTemplateBuilder builder, DocumentServiceProperties properties) {
+        return builder.rootUri(properties.baseUrl())
                 .setConnectTimeout(properties.requestTimeout())
                 .setReadTimeout(properties.requestTimeout())
                 .build();
@@ -19,8 +19,7 @@ public class HttpClientConfig {
 
     @Bean
     RestTemplate ollamaRestTemplate(RestTemplateBuilder builder, OllamaProperties properties) {
-        return builder
-                .rootUri(properties.baseUrl())
+        return builder.rootUri(properties.baseUrl())
                 .setConnectTimeout(properties.requestTimeout())
                 .setReadTimeout(properties.requestTimeout())
                 .build();

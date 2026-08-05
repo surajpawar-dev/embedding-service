@@ -35,16 +35,30 @@ public class InMemoryVectorStoreAdapter implements VectorStorePort {
 
     @Override
     public void deleteByDocumentIdAndModel(UUID documentId, String embeddingModel) {
-        vectorsByChunkId.entrySet().removeIf(entry -> entry.getValue().documentId().equals(documentId)
-                && entry.getValue().embeddingModel().equals(embeddingModel));
+        vectorsByChunkId
+                .entrySet()
+                .removeIf(
+                        entry ->
+                                entry.getValue().documentId().equals(documentId)
+                                        && entry.getValue()
+                                                .embeddingModel()
+                                                .equals(embeddingModel));
     }
 
     @Override
-    public List<ScoredEmbeddingVector> search(float[] queryEmbedding, int topK, List<UUID> documentIds, String embeddingModel) {
+    public List<ScoredEmbeddingVector> search(
+            float[] queryEmbedding, int topK, List<UUID> documentIds, String embeddingModel) {
         return vectorsByChunkId.values().stream()
                 .filter(vector -> embeddingModel.equals(vector.embeddingModel()))
-                .filter(vector -> documentIds == null || documentIds.isEmpty() || documentIds.contains(vector.documentId()))
-                .map(vector -> new ScoredEmbeddingVector(vector, cosine(queryEmbedding, vector.embedding())))
+                .filter(
+                        vector ->
+                                documentIds == null
+                                        || documentIds.isEmpty()
+                                        || documentIds.contains(vector.documentId()))
+                .map(
+                        vector ->
+                                new ScoredEmbeddingVector(
+                                        vector, cosine(queryEmbedding, vector.embedding())))
                 .sorted(Comparator.comparingDouble(ScoredEmbeddingVector::score).reversed())
                 .limit(topK)
                 .toList();

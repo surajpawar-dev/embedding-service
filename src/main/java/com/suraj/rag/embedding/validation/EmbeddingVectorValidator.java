@@ -9,17 +9,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class EmbeddingVectorValidator {
 
-    public void validateEmbeddingResult(int inputCount, List<float[]> embeddings, int expectedDimension) {
+    public void validateEmbeddingResult(
+            int inputCount, List<float[]> embeddings, int expectedDimension) {
         if (embeddings.size() != inputCount) {
-            throw new InvalidEmbeddingRequestException(ErrorCode.EMBEDDING_GENERATION_FAILED,
-                    ErrorMessage.EMBEDDING_COUNT_MISMATCH);
+            throw new InvalidEmbeddingRequestException(
+                    ErrorCode.EMBEDDING_GENERATION_FAILED, ErrorMessage.EMBEDDING_COUNT_MISMATCH);
         }
         embeddings.stream()
                 .filter(vector -> vector == null || vector.length != expectedDimension)
                 .findFirst()
-                .ifPresent(vector -> {
-                    throw new InvalidEmbeddingRequestException(ErrorCode.EMBEDDING_DIMENSION_MISMATCH,
-                            ErrorMessage.EMBEDDING_DIMENSION_MISMATCH);
-                });
+                .ifPresent(
+                        vector -> {
+                            throw new InvalidEmbeddingRequestException(
+                                    ErrorCode.EMBEDDING_DIMENSION_MISMATCH,
+                                    ErrorMessage.EMBEDDING_DIMENSION_MISMATCH);
+                        });
     }
 }

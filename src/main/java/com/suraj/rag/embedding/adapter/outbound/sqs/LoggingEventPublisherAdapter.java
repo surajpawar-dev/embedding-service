@@ -15,7 +15,10 @@ public class LoggingEventPublisherAdapter implements EventPublisherPort {
 
     @Override
     public void publish(EmbeddingCreatedEvent event) {
-        log.info("Embedding event publishing is not wired yet: documentId={}, jobId={}, status={}",
-                event.documentId(), event.embeddingJobId(), event.status());
+        log.info(
+                "Embedding event publishing is not wired yet: documentId={}, jobId={}, status={}",
+                event.documentId(),
+                event.embeddingJobId(),
+                event.status());
     }
 }

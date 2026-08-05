@@ -17,6 +17,4 @@ public record ChunkResponse(
         String source,
         UUID parentChunkId,
         Map<String, Object> metadata,
-        Instant createdAt
-) {
-}
+        Instant createdAt) {}

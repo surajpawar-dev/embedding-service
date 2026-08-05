@@ -7,10 +7,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "aws")
-public record AwsSqsProperties(
-        @NotBlank String region,
-        Sqs sqs
-) {
+public record AwsSqsProperties(@NotBlank String region, Sqs sqs) {
     public record Sqs(
             boolean listenerEnabled,
             String endpoint,
@@ -20,7 +17,5 @@ public record AwsSqsProperties(
             String deadLetterQueueUrl,
             @Min(1) int maxMessages,
             @Min(0) int waitTimeSeconds,
-            @Min(1) int visibilityTimeoutSeconds
-    ) {
-    }
+            @Min(1) int visibilityTimeoutSeconds) {}
 }

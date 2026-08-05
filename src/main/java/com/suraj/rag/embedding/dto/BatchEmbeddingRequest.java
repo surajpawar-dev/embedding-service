@@ -9,6 +9,4 @@ import java.util.UUID;
 public record BatchEmbeddingRequest(
         @NotNull UUID documentId,
         @NotEmpty @Size(max = 1000) List<UUID> chunkIds,
-        String embeddingModel
-) {
-}
+        String embeddingModel) {}

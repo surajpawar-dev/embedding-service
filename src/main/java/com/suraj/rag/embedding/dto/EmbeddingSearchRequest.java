@@ -7,8 +7,4 @@ import java.util.List;
 import java.util.UUID;
 
 public record EmbeddingSearchRequest(
-        @NotBlank String query,
-        @Min(1) @Max(50) Integer topK,
-        List<UUID> documentIds
-) {
-}
+        @NotBlank String query, @Min(1) @Max(50) Integer topK, List<UUID> documentIds) {}

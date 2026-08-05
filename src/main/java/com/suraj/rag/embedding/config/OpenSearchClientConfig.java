@@ -16,10 +16,12 @@ public class OpenSearchClientConfig {
     @Bean(destroyMethod = "close")
     RestClient openSearchRestClient(OpenSearchProperties properties) {
         BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
+        credentialsProvider.setCredentials(
+                AuthScope.ANY,
                 new UsernamePasswordCredentials(properties.username(), properties.password()));
         return RestClient.builder(HttpHost.create(properties.endpoint()))
-                .setHttpClientConfigCallback(builder -> builder.setDefaultCredentialsProvider(credentialsProvider))
+                .setHttpClientConfigCallback(
+                        builder -> builder.setDefaultCredentialsProvider(credentialsProvider))
                 .build();
     }
 }

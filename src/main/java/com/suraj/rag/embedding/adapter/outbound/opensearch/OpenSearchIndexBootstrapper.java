@@ -44,7 +44,8 @@ public class OpenSearchIndexBootstrapper implements ApplicationRunner {
 
     private boolean indexExists() {
         try {
-            restClient.performRequest(new Request("HEAD", "/" + properties.bootstrap().indexName()));
+            restClient.performRequest(
+                    new Request("HEAD", "/" + properties.bootstrap().indexName()));
             return true;
         } catch (ResponseException exception) {
             if (exception.getResponse().getStatusLine().getStatusCode() == 404) {
@@ -58,7 +59,8 @@ public class OpenSearchIndexBootstrapper implements ApplicationRunner {
 
     private String indexDefinition() {
         try {
-            ClassPathResource resource = new ClassPathResource("opensearch/document_embeddings_768.json");
+            ClassPathResource resource =
+                    new ClassPathResource("opensearch/document_embeddings_768.json");
             return resource.getContentAsString(StandardCharsets.UTF_8);
         } catch (IOException exception) {
             throw new VectorStoreException("Failed to load OpenSearch index definition", exception);

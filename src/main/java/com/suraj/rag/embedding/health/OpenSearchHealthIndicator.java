@@ -3,9 +3,9 @@ package com.suraj.rag.embedding.health;
 import java.io.IOException;
 import org.opensearch.client.Request;
 import org.opensearch.client.RestClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 @Component

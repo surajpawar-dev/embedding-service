@@ -13,8 +13,7 @@ import java.util.UUID;
 @Table(name = "embedding_status")
 public class EmbeddingStatusEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
     private UUID jobId;
     private UUID documentId;
     private UUID chunkId;
@@ -22,8 +21,10 @@ public class EmbeddingStatusEntity {
     private String embeddingModel;
     private Integer embeddingDimension;
     private String checksum;
+
     @Enumerated(EnumType.STRING)
     private EmbeddingStatus status;
+
     private String opensearchIndex;
     private String opensearchDocumentId;
     private Integer attemptCount;

@@ -10,8 +10,7 @@ import java.util.UUID;
 @Table(name = "retry_logs")
 public class RetryLogEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
     private UUID jobId;
     private UUID chunkId;
     private Integer attemptNumber;

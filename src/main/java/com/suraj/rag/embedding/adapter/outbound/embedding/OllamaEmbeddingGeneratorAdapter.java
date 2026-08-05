@@ -2,7 +2,6 @@ package com.suraj.rag.embedding.adapter.outbound.embedding;
 
 import com.suraj.rag.embedding.config.OllamaProperties;
 import com.suraj.rag.embedding.exception.EmbeddingGenerationException;
-import com.suraj.rag.embedding.exception.ErrorCode;
 import com.suraj.rag.embedding.port.outbound.EmbeddingGeneratorPort;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,30 +18,35 @@ public class OllamaEmbeddingGeneratorAdapter implements EmbeddingGeneratorPort {
     private final RestTemplate ollamaRestTemplate;
     private final OllamaProperties properties;
 
-    public OllamaEmbeddingGeneratorAdapter(RestTemplate ollamaRestTemplate, OllamaProperties properties) {
+    public OllamaEmbeddingGeneratorAdapter(
+            RestTemplate ollamaRestTemplate, OllamaProperties properties) {
         this.ollamaRestTemplate = ollamaRestTemplate;
         this.properties = properties;
     }
 
     @Override
-    @Retryable(retryFor = EmbeddingGenerationException.class, maxAttempts = 3,
+    @Retryable(
+            retryFor = EmbeddingGenerationException.class,
+            maxAttempts = 3,
             backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public List<float[]> embed(List<String> inputs, String model) {
-        String resolvedModel = model == null || model.isBlank() ? properties.embeddingModel() : model;
-        return inputs.stream()
-                .map(input -> embedOne(input, resolvedModel))
-                .toList();
+        String resolvedModel =
+                model == null || model.isBlank() ? properties.embeddingModel() : model;
+        return inputs.stream().map(input -> embedOne(input, resolvedModel)).toList();
     }
 
     private float[] embedOne(String input, String model) {
         try {
-            OllamaEmbeddingResponse response = ollamaRestTemplate.postForObject(
-                    "/api/embeddings",
-                    new OllamaEmbeddingRequest(model, input),
-                    OllamaEmbeddingResponse.class
-            );
-            if (response == null || response.embedding() == null || response.embedding().isEmpty()) {
-                throw new EmbeddingGenerationException("Embedding provider returned an empty vector");
+            OllamaEmbeddingResponse response =
+                    ollamaRestTemplate.postForObject(
+                            "/api/embeddings",
+                            new OllamaEmbeddingRequest(model, input),
+                            OllamaEmbeddingResponse.class);
+            if (response == null
+                    || response.embedding() == null
+                    || response.embedding().isEmpty()) {
+                throw new EmbeddingGenerationException(
+                        "Embedding provider returned an empty vector");
             }
             float[] vector = new float[response.embedding().size()];
             for (int i = 0; i < response.embedding().size(); i++) {
@@ -54,9 +58,7 @@ public class OllamaEmbeddingGeneratorAdapter implements EmbeddingGeneratorPort {
         }
     }
 
-    private record OllamaEmbeddingRequest(String model, String prompt) {
-    }
+    private record OllamaEmbeddingRequest(String model, String prompt) {}
 
-    private record OllamaEmbeddingResponse(List<Double> embedding) {
-    }
+    private record OllamaEmbeddingResponse(List<Double> embedding) {}
 }

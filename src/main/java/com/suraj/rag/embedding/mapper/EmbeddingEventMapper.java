@@ -19,9 +19,17 @@ public class EmbeddingEventMapper {
             String model,
             int dimension,
             EmbeddingStatus status,
-            String correlationId
-    ) {
-        return new EmbeddingCreatedEvent(EventTypes.EMBEDDING_CREATED, documentId, jobId, embeddingIds, chunkIds,
-                model, dimension, status, Instant.now(), correlationId);
+            String correlationId) {
+        return new EmbeddingCreatedEvent(
+                EventTypes.EMBEDDING_CREATED,
+                documentId,
+                jobId,
+                embeddingIds,
+                chunkIds,
+                model,
+                dimension,
+                status,
+                Instant.now(),
+                correlationId);
     }
 }

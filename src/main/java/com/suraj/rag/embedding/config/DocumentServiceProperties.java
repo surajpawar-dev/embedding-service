@@ -9,8 +9,4 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "app.document-service")
 public record DocumentServiceProperties(
-        @NotBlank String baseUrl,
-        @Min(1) int pageSize,
-        Duration requestTimeout
-) {
-}
+        @NotBlank String baseUrl, @Min(1) int pageSize, Duration requestTimeout) {}

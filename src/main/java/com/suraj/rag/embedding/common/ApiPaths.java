@@ -15,6 +15,5 @@ public final class ApiPaths {
     public static final String OPENAPI = "/v3/api-docs/**";
     public static final String SWAGGER_UI = "/swagger-ui/**";
 
-    private ApiPaths() {
-    }
+    private ApiPaths() {}
 }

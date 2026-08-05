@@ -12,16 +12,28 @@ import org.springframework.stereotype.Component;
 public class NoopOperationalLogAdapter implements OperationalLogPort {
 
     @Override
-    public void audit(UUID jobId, UUID documentId, UUID chunkId, String action, EmbeddingStatus before,
-            EmbeddingStatus after, String details, String correlationId) {
-    }
+    public void audit(
+            UUID jobId,
+            UUID documentId,
+            UUID chunkId,
+            String action,
+            EmbeddingStatus before,
+            EmbeddingStatus after,
+            String details,
+            String correlationId) {}
 
     @Override
-    public void failure(UUID jobId, UUID documentId, UUID chunkId, FailureStage stage, String errorCode,
-            String errorMessage, String payload, boolean permanent) {
-    }
+    public void failure(
+            UUID jobId,
+            UUID documentId,
+            UUID chunkId,
+            FailureStage stage,
+            String errorCode,
+            String errorMessage,
+            String payload,
+            boolean permanent) {}
 
     @Override
-    public void retry(UUID jobId, UUID chunkId, int attemptNumber, String retryReason, String errorMessage) {
-    }
+    public void retry(
+            UUID jobId, UUID chunkId, int attemptNumber, String retryReason, String errorMessage) {}
 }

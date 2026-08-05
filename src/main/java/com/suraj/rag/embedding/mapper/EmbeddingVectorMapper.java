@@ -9,11 +9,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class EmbeddingVectorMapper {
 
-    public EmbeddingVector toVector(ChunkResponse chunk, float[] embedding, UUID embeddingId, String model, int dimension) {
+    public EmbeddingVector toVector(
+            ChunkResponse chunk, float[] embedding, UUID embeddingId, String model, int dimension) {
         return toVector(chunk, embedding, embeddingId, model, dimension, null);
     }
 
-    public EmbeddingVector toVector(ChunkResponse chunk, float[] embedding, UUID embeddingId, String model, int dimension,
+    public EmbeddingVector toVector(
+            ChunkResponse chunk,
+            float[] embedding,
+            UUID embeddingId,
+            String model,
+            int dimension,
             String documentChecksum) {
         return new EmbeddingVector(
                 embeddingId,
@@ -33,7 +39,6 @@ public class EmbeddingVectorMapper {
                 chunk.metadata(),
                 documentChecksum,
                 chunk.checksum(),
-                Instant.now()
-        );
+                Instant.now());
     }
 }

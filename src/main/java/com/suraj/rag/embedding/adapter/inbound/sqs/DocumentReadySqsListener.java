@@ -26,7 +26,10 @@ public class DocumentReadySqsListener {
     private final ObjectMapper objectMapper;
     private final StartDocumentEmbeddingUseCase startDocumentEmbeddingUseCase;
 
-    public DocumentReadySqsListener(SqsClient sqsClient, AwsSqsProperties properties, ObjectMapper objectMapper,
+    public DocumentReadySqsListener(
+            SqsClient sqsClient,
+            AwsSqsProperties properties,
+            ObjectMapper objectMapper,
             StartDocumentEmbeddingUseCase startDocumentEmbeddingUseCase) {
         this.sqsClient = sqsClient;
         this.properties = properties;
@@ -41,12 +44,13 @@ public class DocumentReadySqsListener {
             log.warn("SQS listener enabled but no document-ready queue URL is configured");
             return;
         }
-        ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .maxNumberOfMessages(properties.sqs().maxMessages())
-                .waitTimeSeconds(properties.sqs().waitTimeSeconds())
-                .visibilityTimeout(properties.sqs().visibilityTimeoutSeconds())
-                .build();
+        ReceiveMessageRequest request =
+                ReceiveMessageRequest.builder()
+                        .queueUrl(queueUrl)
+                        .maxNumberOfMessages(properties.sqs().maxMessages())
+                        .waitTimeSeconds(properties.sqs().waitTimeSeconds())
+                        .visibilityTimeout(properties.sqs().visibilityTimeoutSeconds())
+                        .build();
         for (Message message : sqsClient.receiveMessage(request).messages()) {
             handleMessage(queueUrl, message);
         }
@@ -54,18 +58,24 @@ public class DocumentReadySqsListener {
 
     private void handleMessage(String queueUrl, Message message) {
         try {
-            DocumentReadyEvent event = objectMapper.readValue(message.body(), DocumentReadyEvent.class);
+            DocumentReadyEvent event =
+                    objectMapper.readValue(message.body(), DocumentReadyEvent.class);
             startDocumentEmbeddingUseCase.handleDocumentReady(event);
-            sqsClient.deleteMessage(DeleteMessageRequest.builder()
-                    .queueUrl(queueUrl)
-                    .receiptHandle(message.receiptHandle())
-                    .build());
+            sqsClient.deleteMessage(
+                    DeleteMessageRequest.builder()
+                            .queueUrl(queueUrl)
+                            .receiptHandle(message.receiptHandle())
+                            .build());
         } catch (JsonProcessingException exception) {
-            log.error("Invalid document-ready SQS message. Leaving message for DLQ redrive: messageId={}",
-                    message.messageId(), exception);
+            log.error(
+                    "Invalid document-ready SQS message. Leaving message for DLQ redrive: messageId={}",
+                    message.messageId(),
+                    exception);
         } catch (RuntimeException exception) {
-            log.error("Document-ready SQS processing failed. Message will become visible again: messageId={}",
-                    message.messageId(), exception);
+            log.error(
+                    "Document-ready SQS processing failed. Message will become visible again: messageId={}",
+                    message.messageId(),
+                    exception);
         }
     }
 

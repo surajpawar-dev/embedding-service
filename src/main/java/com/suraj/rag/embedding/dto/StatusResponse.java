@@ -8,6 +8,4 @@ public record StatusResponse(
         long totalChunks,
         long completedChunks,
         long failedChunks,
-        EmbeddingStatus status
-) {
-}
+        EmbeddingStatus status) {}

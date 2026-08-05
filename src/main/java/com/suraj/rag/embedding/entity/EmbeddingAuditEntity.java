@@ -10,8 +10,7 @@ import java.util.UUID;
 @Table(name = "embedding_audit")
 public class EmbeddingAuditEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
     private UUID jobId;
     private UUID chunkId;
     private UUID documentId;

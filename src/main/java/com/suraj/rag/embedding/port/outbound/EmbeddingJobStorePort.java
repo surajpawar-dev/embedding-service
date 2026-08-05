@@ -3,14 +3,26 @@ package com.suraj.rag.embedding.port.outbound;
 import com.suraj.rag.embedding.domain.EmbeddingStatus;
 import com.suraj.rag.embedding.dto.DocumentEmbeddingResponse;
 import com.suraj.rag.embedding.dto.EmbeddingResponse;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface EmbeddingJobStorePort {
-    UUID createJob(UUID documentId, int totalChunks, String embeddingModel, int embeddingDimension, String correlationId);
+    UUID createJob(
+            UUID documentId,
+            int totalChunks,
+            String embeddingModel,
+            int embeddingDimension,
+            String correlationId);
 
-    void markChunk(UUID jobId, UUID documentId, UUID chunkId, UUID embeddingId, String model, int dimension, String checksum, EmbeddingStatus status);
+    void markChunk(
+            UUID jobId,
+            UUID documentId,
+            UUID chunkId,
+            UUID embeddingId,
+            String model,
+            int dimension,
+            String checksum,
+            EmbeddingStatus status);
 
     void completeJob(UUID jobId, EmbeddingStatus status);
 

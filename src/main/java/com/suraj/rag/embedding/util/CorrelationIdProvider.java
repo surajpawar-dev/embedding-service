@@ -10,6 +10,8 @@ public class CorrelationIdProvider {
 
     public String currentOrNew() {
         String correlationId = MDC.get(MdcKeys.CORRELATION_ID);
-        return correlationId == null || correlationId.isBlank() ? UUID.randomUUID().toString() : correlationId;
+        return correlationId == null || correlationId.isBlank()
+                ? UUID.randomUUID().toString()
+                : correlationId;
     }
 }

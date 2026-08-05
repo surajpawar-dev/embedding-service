@@ -8,8 +8,4 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "app.ollama")
 public record OllamaProperties(
-        @NotBlank String baseUrl,
-        @NotBlank String embeddingModel,
-        Duration requestTimeout
-) {
-}
+        @NotBlank String baseUrl, @NotBlank String embeddingModel, Duration requestTimeout) {}

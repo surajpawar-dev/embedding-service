@@ -9,6 +9,4 @@ public record DocumentResponse(
         String status,
         Integer chunkCount,
         Instant createdAt,
-        Instant updatedAt
-) {
-}
+        Instant updatedAt) {}

@@ -4,9 +4,9 @@ import com.suraj.rag.embedding.common.ApiPaths;
 import com.suraj.rag.embedding.dto.BatchEmbeddingRequest;
 import com.suraj.rag.embedding.dto.CreateEmbeddingRequest;
 import com.suraj.rag.embedding.dto.DocumentEmbeddingResponse;
+import com.suraj.rag.embedding.dto.EmbeddingResponse;
 import com.suraj.rag.embedding.dto.EmbeddingSearchRequest;
 import com.suraj.rag.embedding.dto.EmbeddingSearchResponse;
-import com.suraj.rag.embedding.dto.EmbeddingResponse;
 import com.suraj.rag.embedding.dto.StatusResponse;
 import com.suraj.rag.embedding.event.DocumentReadyEvent;
 import com.suraj.rag.embedding.exception.NotFoundException;
@@ -46,8 +46,7 @@ public class EmbeddingController {
             QueryEmbeddingUseCase queryEmbeddingUseCase,
             DeleteEmbeddingUseCase deleteEmbeddingUseCase,
             StartDocumentEmbeddingUseCase startDocumentEmbeddingUseCase,
-            SearchEmbeddingsUseCase searchEmbeddingsUseCase
-    ) {
+            SearchEmbeddingsUseCase searchEmbeddingsUseCase) {
         this.createEmbeddingUseCase = createEmbeddingUseCase;
         this.createBatchEmbeddingsUseCase = createBatchEmbeddingsUseCase;
         this.queryEmbeddingUseCase = queryEmbeddingUseCase;
@@ -57,7 +56,8 @@ public class EmbeddingController {
     }
 
     @PostMapping
-    public ResponseEntity<EmbeddingResponse> create(@Valid @RequestBody CreateEmbeddingRequest request) {
+    public ResponseEntity<EmbeddingResponse> create(
+            @Valid @RequestBody CreateEmbeddingRequest request) {
         EmbeddingResponse response = createEmbeddingUseCase.create(request);
         return ResponseEntity.accepted()
                 .location(URI.create(ApiPaths.EMBEDDINGS + "/" + response.chunkId()))
@@ -65,18 +65,22 @@ public class EmbeddingController {
     }
 
     @PostMapping(ApiPaths.EMBEDDINGS_BATCH)
-    public ResponseEntity<List<EmbeddingResponse>> createBatch(@Valid @RequestBody BatchEmbeddingRequest request) {
+    public ResponseEntity<List<EmbeddingResponse>> createBatch(
+            @Valid @RequestBody BatchEmbeddingRequest request) {
         return ResponseEntity.accepted().body(createBatchEmbeddingsUseCase.createBatch(request));
     }
 
     @PostMapping(ApiPaths.EMBEDDINGS_DOCUMENTS)
-    public ResponseEntity<DocumentEmbeddingResponse> startDocumentEmbedding(@PathVariable UUID documentId) {
+    public ResponseEntity<DocumentEmbeddingResponse> startDocumentEmbedding(
+            @PathVariable UUID documentId) {
         return ResponseEntity.accepted().body(startDocumentEmbeddingUseCase.start(documentId));
     }
 
     @PostMapping(ApiPaths.EMBEDDINGS_DOCUMENT_READY_EVENTS)
-    public ResponseEntity<DocumentEmbeddingResponse> handleDocumentReady(@Valid @RequestBody DocumentReadyEvent event) {
-        return ResponseEntity.accepted().body(startDocumentEmbeddingUseCase.handleDocumentReady(event));
+    public ResponseEntity<DocumentEmbeddingResponse> handleDocumentReady(
+            @Valid @RequestBody DocumentReadyEvent event) {
+        return ResponseEntity.accepted()
+                .body(startDocumentEmbeddingUseCase.handleDocumentReady(event));
     }
 
     @GetMapping(ApiPaths.EMBEDDINGS_DOCUMENT_STATUS)
@@ -85,14 +89,20 @@ public class EmbeddingController {
     }
 
     @PostMapping(ApiPaths.EMBEDDINGS_SEARCH)
-    public ResponseEntity<EmbeddingSearchResponse> search(@Valid @RequestBody EmbeddingSearchRequest request) {
+    public ResponseEntity<EmbeddingSearchResponse> search(
+            @Valid @RequestBody EmbeddingSearchRequest request) {
         return ResponseEntity.ok(searchEmbeddingsUseCase.search(request));
     }
 
     @GetMapping("/{chunkId}")
     public ResponseEntity<EmbeddingResponse> findByChunkId(@PathVariable UUID chunkId) {
-        EmbeddingResponse response = queryEmbeddingUseCase.findByChunkId(chunkId)
-                .orElseThrow(() -> new NotFoundException("Embedding not found for chunkId=" + chunkId));
+        EmbeddingResponse response =
+                queryEmbeddingUseCase
+                        .findByChunkId(chunkId)
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Embedding not found for chunkId=" + chunkId));
         return ResponseEntity.ok(response);
     }
 

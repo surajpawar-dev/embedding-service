@@ -10,6 +10,4 @@ public record ChunksCreatedEvent(
         List<UUID> chunkIds,
         int totalChunks,
         Instant createdAt,
-        String correlationId
-) {
-}
+        String correlationId) {}

@@ -9,6 +9,4 @@ public record EmbeddingSearchMatch(
         Integer chunkOrder,
         String content,
         double score,
-        Map<String, Object> metadata
-) {
-}
+        Map<String, Object> metadata) {}

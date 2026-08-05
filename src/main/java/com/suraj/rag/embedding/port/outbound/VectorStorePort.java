@@ -14,8 +14,8 @@ public interface VectorStorePort {
 
     void deleteByDocumentIdAndModel(UUID documentId, String embeddingModel);
 
-    List<ScoredEmbeddingVector> search(float[] queryEmbedding, int topK, List<UUID> documentIds, String embeddingModel);
+    List<ScoredEmbeddingVector> search(
+            float[] queryEmbedding, int topK, List<UUID> documentIds, String embeddingModel);
 
-    record ScoredEmbeddingVector(EmbeddingVector vector, double score) {
-    }
+    record ScoredEmbeddingVector(EmbeddingVector vector, double score) {}
 }

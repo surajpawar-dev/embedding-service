@@ -13,13 +13,14 @@ import java.util.UUID;
 @Table(name = "failure_logs")
 public class FailureLogEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
     private UUID jobId;
     private UUID documentId;
     private UUID chunkId;
+
     @Enumerated(EnumType.STRING)
     private FailureStage failureStage;
+
     private String errorCode;
     private String errorMessage;
     private String stackTrace;

@@ -21,14 +21,19 @@ public class JpaEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     private final EmbeddingJobJpaRepository jobRepository;
     private final EmbeddingStatusJpaRepository statusRepository;
 
-    public JpaEmbeddingJobStoreAdapter(EmbeddingJobJpaRepository jobRepository,
+    public JpaEmbeddingJobStoreAdapter(
+            EmbeddingJobJpaRepository jobRepository,
             EmbeddingStatusJpaRepository statusRepository) {
         this.jobRepository = jobRepository;
         this.statusRepository = statusRepository;
     }
 
     @Override
-    public UUID createJob(UUID documentId, int totalChunks, String embeddingModel, int embeddingDimension,
+    public UUID createJob(
+            UUID documentId,
+            int totalChunks,
+            String embeddingModel,
+            int embeddingDimension,
             String correlationId) {
         Instant now = Instant.now();
         EmbeddingJobEntity job = new EmbeddingJobEntity();
@@ -47,18 +52,27 @@ public class JpaEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     }
 
     @Override
-    public void markChunk(UUID jobId, UUID documentId, UUID chunkId, UUID embeddingId, String model, int dimension,
-            String checksum, EmbeddingStatus status) {
+    public void markChunk(
+            UUID jobId,
+            UUID documentId,
+            UUID chunkId,
+            UUID embeddingId,
+            String model,
+            int dimension,
+            String checksum,
+            EmbeddingStatus status) {
         Instant now = Instant.now();
-        EmbeddingStatusEntity entity = statusRepository
-                .findFirstByChunkIdAndEmbeddingModelAndChecksum(chunkId, model, checksum)
-                .orElseGet(() -> {
-                    EmbeddingStatusEntity created = new EmbeddingStatusEntity();
-                    created.setId(UUID.randomUUID());
-                    created.setCreatedAt(now);
-                    created.setAttemptCount(0);
-                    return created;
-                });
+        EmbeddingStatusEntity entity =
+                statusRepository
+                        .findFirstByChunkIdAndEmbeddingModelAndChecksum(chunkId, model, checksum)
+                        .orElseGet(
+                                () -> {
+                                    EmbeddingStatusEntity created = new EmbeddingStatusEntity();
+                                    created.setId(UUID.randomUUID());
+                                    created.setCreatedAt(now);
+                                    created.setAttemptCount(0);
+                                    return created;
+                                });
         entity.setJobId(jobId);
         entity.setDocumentId(documentId);
         entity.setChunkId(chunkId);
@@ -77,27 +91,38 @@ public class JpaEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
 
     @Override
     public void completeJob(UUID jobId, EmbeddingStatus status) {
-        jobRepository.findById(jobId).ifPresent(job -> {
-            job.setCompletedChunks((int) statusRepository.countByDocumentIdAndStatus(job.getDocumentId(),
-                    EmbeddingStatus.COMPLETED));
-            job.setFailedChunks((int) statusRepository.countByDocumentIdAndStatus(job.getDocumentId(),
-                    EmbeddingStatus.FAILED));
-            job.setStatus(status);
-            job.setUpdatedAt(Instant.now());
-            job.setCompletedAt(Instant.now());
-            jobRepository.save(job);
-        });
+        jobRepository
+                .findById(jobId)
+                .ifPresent(
+                        job -> {
+                            job.setCompletedChunks(
+                                    (int)
+                                            statusRepository.countByDocumentIdAndStatus(
+                                                    job.getDocumentId(),
+                                                    EmbeddingStatus.COMPLETED));
+                            job.setFailedChunks(
+                                    (int)
+                                            statusRepository.countByDocumentIdAndStatus(
+                                                    job.getDocumentId(), EmbeddingStatus.FAILED));
+                            job.setStatus(status);
+                            job.setUpdatedAt(Instant.now());
+                            job.setCompletedAt(Instant.now());
+                            jobRepository.save(job);
+                        });
     }
 
     @Override
     public void failJob(UUID jobId, String failureReason) {
-        jobRepository.findById(jobId).ifPresent(job -> {
-            job.setFailedChunks(job.getTotalChunks());
-            job.setStatus(EmbeddingStatus.FAILED);
-            job.setUpdatedAt(Instant.now());
-            job.setCompletedAt(Instant.now());
-            jobRepository.save(job);
-        });
+        jobRepository
+                .findById(jobId)
+                .ifPresent(
+                        job -> {
+                            job.setFailedChunks(job.getTotalChunks());
+                            job.setStatus(EmbeddingStatus.FAILED);
+                            job.setUpdatedAt(Instant.now());
+                            job.setCompletedAt(Instant.now());
+                            jobRepository.save(job);
+                        });
     }
 
     @Override
@@ -107,9 +132,19 @@ public class JpaEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
 
     @Override
     public Optional<DocumentEmbeddingResponse> findLatestByDocumentId(UUID documentId) {
-        return jobRepository.findFirstByDocumentIdOrderByCreatedAtDesc(documentId)
-                .map(job -> new DocumentEmbeddingResponse(job.getId(), job.getDocumentId(), job.getTotalChunks(), null,
-                        job.getEmbeddingModel(), job.getEmbeddingDimension(), job.getStatus(), job.getCreatedAt()));
+        return jobRepository
+                .findFirstByDocumentIdOrderByCreatedAtDesc(documentId)
+                .map(
+                        job ->
+                                new DocumentEmbeddingResponse(
+                                        job.getId(),
+                                        job.getDocumentId(),
+                                        job.getTotalChunks(),
+                                        null,
+                                        job.getEmbeddingModel(),
+                                        job.getEmbeddingDimension(),
+                                        job.getStatus(),
+                                        job.getCreatedAt()));
     }
 
     @Override
@@ -123,8 +158,14 @@ public class JpaEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     }
 
     private EmbeddingResponse toEmbeddingResponse(EmbeddingStatusEntity entity) {
-        return new EmbeddingResponse(entity.getJobId(), entity.getDocumentId(), entity.getChunkId(),
-                entity.getEmbeddingId(), entity.getEmbeddingModel(), entity.getEmbeddingDimension(), entity.getStatus(),
+        return new EmbeddingResponse(
+                entity.getJobId(),
+                entity.getDocumentId(),
+                entity.getChunkId(),
+                entity.getEmbeddingId(),
+                entity.getEmbeddingModel(),
+                entity.getEmbeddingDimension(),
+                entity.getStatus(),
                 entity.getCreatedAt());
     }
 }

@@ -12,6 +12,4 @@ public record EmbeddingResponse(
         String embeddingModel,
         Integer embeddingDimension,
         EmbeddingStatus status,
-        Instant createdAt
-) {
-}
+        Instant createdAt) {}

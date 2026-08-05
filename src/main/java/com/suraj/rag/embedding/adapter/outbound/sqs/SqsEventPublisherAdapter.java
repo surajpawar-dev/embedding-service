@@ -24,23 +24,28 @@ public class SqsEventPublisherAdapter implements EventPublisherPort {
     private final AwsSqsProperties properties;
     private final ObjectMapper objectMapper;
 
-    public SqsEventPublisherAdapter(SqsClient sqsClient, AwsSqsProperties properties, ObjectMapper objectMapper) {
+    public SqsEventPublisherAdapter(
+            SqsClient sqsClient, AwsSqsProperties properties, ObjectMapper objectMapper) {
         this.sqsClient = sqsClient;
         this.properties = properties;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    @Retryable(retryFor = SqsException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = SqsException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void publish(EmbeddingCreatedEvent event) {
         String queueUrl = properties.sqs().embeddingCreatedQueueUrl();
         if (queueUrl == null || queueUrl.isBlank()) {
-            throw new EmbeddingException(ErrorCode.EVENT_PUBLISH_FAILED, HttpStatus.INTERNAL_SERVER_ERROR,
+            throw new EmbeddingException(
+                    ErrorCode.EVENT_PUBLISH_FAILED,
+                    HttpStatus.INTERNAL_SERVER_ERROR,
                     "EMBEDDING_CREATED_QUEUE_URL must be configured when event-publisher.mode=sqs");
         }
-        SendMessageRequest.Builder request = SendMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .messageBody(toJson(event));
+        SendMessageRequest.Builder request =
+                SendMessageRequest.builder().queueUrl(queueUrl).messageBody(toJson(event));
         if (queueUrl.endsWith(".fifo")) {
             request.messageGroupId(event.documentId().toString())
                     .messageDeduplicationId(event.embeddingJobId().toString());
@@ -52,8 +57,11 @@ public class SqsEventPublisherAdapter implements EventPublisherPort {
         try {
             return objectMapper.writeValueAsString(event);
         } catch (JsonProcessingException exception) {
-            throw new EmbeddingException(ErrorCode.EVENT_PUBLISH_FAILED, HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to serialize embedding-created event", exception);
+            throw new EmbeddingException(
+                    ErrorCode.EVENT_PUBLISH_FAILED,
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to serialize embedding-created event",
+                    exception);
         }
     }
 }

@@ -13,16 +13,17 @@ import java.util.UUID;
 @Table(name = "embedding_jobs")
 public class EmbeddingJobEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
     private UUID documentId;
     private Integer totalChunks;
     private Integer completedChunks;
     private Integer failedChunks;
     private String embeddingModel;
     private Integer embeddingDimension;
+
     @Enumerated(EnumType.STRING)
     private EmbeddingStatus status;
+
     private String correlationId;
     private Instant createdAt;
     private Instant updatedAt;

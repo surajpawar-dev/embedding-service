@@ -13,7 +13,8 @@ public class EmbeddingException extends RuntimeException {
         this.httpStatus = httpStatus;
     }
 
-    public EmbeddingException(ErrorCode errorCode, HttpStatus httpStatus, String message, Throwable cause) {
+    public EmbeddingException(
+            ErrorCode errorCode, HttpStatus httpStatus, String message, Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
         this.httpStatus = httpStatus;

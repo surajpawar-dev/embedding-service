@@ -100,7 +100,7 @@ services:
       localstack:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: local
       SERVER_PORT: 8080
       DATABASE_URL: jdbc:postgresql://document-processing-db:5432/document_processing?options=-c%20TimeZone=UTC
       DATABASE_USERNAME: document_processing
@@ -134,6 +134,7 @@ services:
       rag-document-processing-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: local
       SERVER_PORT: 8080
       POSTGRES_HOST: embedding-db
       POSTGRES_PORT: 5432
@@ -175,6 +176,7 @@ services:
       rag-document-processing-service:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: local
       SERVER_PORT: 8080
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test

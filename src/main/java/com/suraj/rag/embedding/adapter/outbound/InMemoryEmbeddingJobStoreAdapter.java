@@ -24,10 +24,24 @@ public class InMemoryEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     private final Map<UUID, AtomicInteger> failedByJobId = new ConcurrentHashMap<>();
 
     @Override
-    public UUID createJob(UUID documentId, int totalChunks, String embeddingModel, int embeddingDimension, String correlationId) {
+    public UUID createJob(
+            UUID documentId,
+            int totalChunks,
+            String embeddingModel,
+            int embeddingDimension,
+            String correlationId) {
         UUID jobId = UUID.randomUUID();
-        jobsById.put(jobId, new DocumentEmbeddingResponse(jobId, documentId, totalChunks, null, embeddingModel,
-                embeddingDimension, EmbeddingStatus.RECEIVED, Instant.now()));
+        jobsById.put(
+                jobId,
+                new DocumentEmbeddingResponse(
+                        jobId,
+                        documentId,
+                        totalChunks,
+                        null,
+                        embeddingModel,
+                        embeddingDimension,
+                        EmbeddingStatus.RECEIVED,
+                        Instant.now()));
         latestJobIdByDocumentId.put(documentId, jobId);
         completedByJobId.put(jobId, new AtomicInteger());
         failedByJobId.put(jobId, new AtomicInteger());
@@ -35,10 +49,26 @@ public class InMemoryEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     }
 
     @Override
-    public void markChunk(UUID jobId, UUID documentId, UUID chunkId, UUID embeddingId, String model, int dimension,
-            String checksum, EmbeddingStatus status) {
-        responsesByChunkId.put(chunkId, new EmbeddingResponse(jobId, documentId, chunkId, embeddingId, model, dimension,
-                status, Instant.now()));
+    public void markChunk(
+            UUID jobId,
+            UUID documentId,
+            UUID chunkId,
+            UUID embeddingId,
+            String model,
+            int dimension,
+            String checksum,
+            EmbeddingStatus status) {
+        responsesByChunkId.put(
+                chunkId,
+                new EmbeddingResponse(
+                        jobId,
+                        documentId,
+                        chunkId,
+                        embeddingId,
+                        model,
+                        dimension,
+                        status,
+                        Instant.now()));
         if (status == EmbeddingStatus.COMPLETED || status == EmbeddingStatus.READY) {
             completedByJobId.get(jobId).incrementAndGet();
         } else if (status == EmbeddingStatus.FAILED) {
@@ -50,9 +80,17 @@ public class InMemoryEmbeddingJobStoreAdapter implements EmbeddingJobStorePort {
     public void completeJob(UUID jobId, EmbeddingStatus status) {
         DocumentEmbeddingResponse existing = jobsById.get(jobId);
         if (existing != null) {
-            jobsById.put(jobId, new DocumentEmbeddingResponse(jobId, existing.documentId(), existing.acceptedChunks(),
-                    existing.documentChecksum(), existing.embeddingModel(), existing.embeddingDimension(), status,
-                    existing.createdAt()));
+            jobsById.put(
+                    jobId,
+                    new DocumentEmbeddingResponse(
+                            jobId,
+                            existing.documentId(),
+                            existing.acceptedChunks(),
+                            existing.documentChecksum(),
+                            existing.embeddingModel(),
+                            existing.embeddingDimension(),
+                            status,
+                            existing.createdAt()));
         }
     }
 

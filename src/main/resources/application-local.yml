@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:embedding}
+    username: ${POSTGRES_USER:embedding}
+    password: ${POSTGRES_PASSWORD:embedding}
+
+app:
+  document-service:
+    base-url: ${DOCUMENT_SERVICE_BASE_URL:http://localhost:8081}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+
+opensearch:
+  endpoint: ${OPENSEARCH_ENDPOINT:http://localhost:9200}
+  username: ${OPENSEARCH_USERNAME:admin}
+  password: ${OPENSEARCH_PASSWORD:admin}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  sqs:
+    endpoint: ${AWS_SQS_ENDPOINT:http://localhost:4566}
+    listener-enabled: ${SQS_LISTENER_ENABLED:false}
+    document-ready-queue-url: ${DOCUMENT_READY_QUEUE_URL:http://localhost:4566/000000000000/document-ready}
+    embedding-created-queue-url: ${EMBEDDING_CREATED_QUEUE_URL:http://localhost:4566/000000000000/embedding-created}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:false}

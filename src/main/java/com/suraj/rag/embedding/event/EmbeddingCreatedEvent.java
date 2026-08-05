@@ -15,6 +15,4 @@ public record EmbeddingCreatedEvent(
         int embeddingDimension,
         EmbeddingStatus status,
         Instant createdAt,
-        String correlationId
-) {
-}
+        String correlationId) {}

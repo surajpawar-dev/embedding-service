@@ -10,6 +10,4 @@ public record DocumentReadyEvent(
         @NotNull UUID documentId,
         @NotBlank String checksum,
         @Min(0) int chunkCount,
-        @NotNull Instant readyAt
-) {
-}
+        @NotNull Instant readyAt) {}

@@ -29,31 +29,42 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "vector-store", name = "mode", havingValue = "opensearch")
 public class OpenSearchVectorStoreAdapter implements VectorStorePort {
 
-    private static final TypeReference<Map<String, Object>> METADATA_TYPE = new TypeReference<>() {
-    };
+    private static final TypeReference<Map<String, Object>> METADATA_TYPE =
+            new TypeReference<>() {};
 
     private final RestClient restClient;
     private final OpenSearchProperties properties;
     private final ObjectMapper objectMapper;
 
-    public OpenSearchVectorStoreAdapter(RestClient restClient, OpenSearchProperties properties, ObjectMapper objectMapper) {
+    public OpenSearchVectorStoreAdapter(
+            RestClient restClient, OpenSearchProperties properties, ObjectMapper objectMapper) {
         this.restClient = restClient;
         this.properties = properties;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    @Retryable(retryFor = VectorStoreException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = VectorStoreException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void upsertAll(List<EmbeddingVector> vectors) {
         if (vectors.isEmpty()) {
             return;
         }
         StringBuilder payload = new StringBuilder();
         for (EmbeddingVector vector : vectors) {
-            appendBulkLine(payload, Map.of("index", Map.of(
-                    "_index", properties.writeAlias(),
-                    "_id", documentId(vector.documentId(), vector.chunkId(), vector.embeddingModel())
-            )));
+            appendBulkLine(
+                    payload,
+                    Map.of(
+                            "index",
+                            Map.of(
+                                    "_index", properties.writeAlias(),
+                                    "_id",
+                                            documentId(
+                                                    vector.documentId(),
+                                                    vector.chunkId(),
+                                                    vector.embeddingModel()))));
             appendBulkLine(payload, toDocument(vector, true));
         }
         Request request = new Request("POST", "/_bulk");
@@ -71,56 +82,93 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
     }
 
     @Override
-    @Retryable(retryFor = VectorStoreException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = VectorStoreException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public Optional<EmbeddingVector> findByChunkId(UUID chunkId) {
-        Map<String, Object> body = Map.of(
-                "size", 1,
-                "query", Map.of("term", Map.of("chunkId", chunkId.toString()))
-        );
+        Map<String, Object> body =
+                Map.of("size", 1, "query", Map.of("term", Map.of("chunkId", chunkId.toString())));
         return executeSearch(body).stream().findFirst().map(SearchHit::vector);
     }
 
     @Override
-    @Retryable(retryFor = VectorStoreException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = VectorStoreException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void deleteByChunkId(UUID chunkId) {
-        Map<String, Object> body = Map.of(
-                "query", Map.of("term", Map.of("chunkId", chunkId.toString()))
-        );
+        Map<String, Object> body =
+                Map.of("query", Map.of("term", Map.of("chunkId", chunkId.toString())));
         deleteByQuery(body, "Failed to delete vectors from OpenSearch");
     }
 
     @Override
-    @Retryable(retryFor = VectorStoreException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    @Retryable(
+            retryFor = VectorStoreException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
     public void deleteByDocumentIdAndModel(UUID documentId, String embeddingModel) {
-        Map<String, Object> body = Map.of(
-                "query", Map.of("bool", Map.of("filter", List.of(
-                        Map.of("term", Map.of("documentId", documentId.toString())),
-                        Map.of("term", Map.of("embeddingModel", embeddingModel))
-                )))
-        );
+        Map<String, Object> body =
+                Map.of(
+                        "query",
+                        Map.of(
+                                "bool",
+                                Map.of(
+                                        "filter",
+                                        List.of(
+                                                Map.of(
+                                                        "term",
+                                                        Map.of(
+                                                                "documentId",
+                                                                documentId.toString())),
+                                                Map.of(
+                                                        "term",
+                                                        Map.of(
+                                                                "embeddingModel",
+                                                                embeddingModel))))));
         deleteByQuery(body, "Failed to delete stale document vectors from OpenSearch");
     }
 
     @Override
-    @Retryable(retryFor = VectorStoreException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2.0))
-    public List<ScoredEmbeddingVector> search(float[] queryEmbedding, int topK, List<UUID> documentIds,
-            String embeddingModel) {
+    @Retryable(
+            retryFor = VectorStoreException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0))
+    public List<ScoredEmbeddingVector> search(
+            float[] queryEmbedding, int topK, List<UUID> documentIds, String embeddingModel) {
         List<Object> filters = new ArrayList<>();
         filters.add(Map.of("term", Map.of("embeddingModel", embeddingModel)));
         if (documentIds != null && !documentIds.isEmpty()) {
-            filters.add(Map.of("terms", Map.of("documentId", documentIds.stream().map(UUID::toString).toList())));
+            filters.add(
+                    Map.of(
+                            "terms",
+                            Map.of(
+                                    "documentId",
+                                    documentIds.stream().map(UUID::toString).toList())));
         }
-        Map<String, Object> body = Map.of(
-                "size", topK,
-                "query", Map.of("bool", Map.of(
-                        "filter", filters,
-                        "must", List.of(Map.of("knn", Map.of("embedding", Map.of(
-                                "vector", toList(queryEmbedding),
-                                "k", topK
-                        ))))
-                )),
-                "_source", Map.of("excludes", List.of("embedding"))
-        );
+        Map<String, Object> body =
+                Map.of(
+                        "size", topK,
+                        "query",
+                                Map.of(
+                                        "bool",
+                                        Map.of(
+                                                "filter",
+                                                filters,
+                                                "must",
+                                                List.of(
+                                                        Map.of(
+                                                                "knn",
+                                                                Map.of(
+                                                                        "embedding",
+                                                                        Map.of(
+                                                                                "vector",
+                                                                                toList(
+                                                                                        queryEmbedding),
+                                                                                "k",
+                                                                                topK)))))),
+                        "_source", Map.of("excludes", List.of("embedding")));
         return executeSearch(body).stream()
                 .map(hit -> new ScoredEmbeddingVector(hit.vector(), hit.score()))
                 .toList();
@@ -131,12 +179,16 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
         request.setJsonEntity(toJson(body));
         try {
             Response response = restClient.performRequest(request);
-            JsonNode hits = objectMapper.readTree(EntityUtils.toString(response.getEntity()))
-                    .path("hits")
-                    .path("hits");
+            JsonNode hits =
+                    objectMapper
+                            .readTree(EntityUtils.toString(response.getEntity()))
+                            .path("hits")
+                            .path("hits");
             List<SearchHit> results = new ArrayList<>();
             for (JsonNode hit : hits) {
-                results.add(new SearchHit(toVector(hit.path("_source")), hit.path("_score").asDouble(0.0)));
+                results.add(
+                        new SearchHit(
+                                toVector(hit.path("_source")), hit.path("_score").asDouble(0.0)));
             }
             return results;
         } catch (IOException exception) {
@@ -172,7 +224,9 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
         document.put("title", vector.title());
         document.put("language", vector.language());
         document.put("source", vector.source());
-        document.put("parentChunkId", vector.parentChunkId() == null ? null : vector.parentChunkId().toString());
+        document.put(
+                "parentChunkId",
+                vector.parentChunkId() == null ? null : vector.parentChunkId().toString());
         document.put("metadata", vector.metadata());
         document.put("documentChecksum", vector.documentChecksum());
         document.put("checksum", vector.checksum());
@@ -200,8 +254,7 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
                 metadata(source.path("metadata")),
                 textOrNull(source, "documentChecksum"),
                 textOrNull(source, "checksum"),
-                Instant.parse(textOrDefault(source, "createdAt", Instant.EPOCH.toString()))
-        );
+                Instant.parse(textOrDefault(source, "createdAt", Instant.EPOCH.toString())));
     }
 
     private String documentId(UUID documentId, UUID chunkId, String embeddingModel) {
@@ -261,7 +314,9 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
 
     private String textOrNull(JsonNode source, String field) {
         JsonNode value = source.path(field);
-        return value.isMissingNode() || value.isNull() || value.asText().isBlank() ? null : value.asText();
+        return value.isMissingNode() || value.isNull() || value.asText().isBlank()
+                ? null
+                : value.asText();
     }
 
     private String textOrDefault(JsonNode source, String field, String defaultValue) {
@@ -269,6 +324,5 @@ public class OpenSearchVectorStoreAdapter implements VectorStorePort {
         return value == null ? defaultValue : value;
     }
 
-    private record SearchHit(EmbeddingVector vector, double score) {
-    }
+    private record SearchHit(EmbeddingVector vector, double score) {}
 }

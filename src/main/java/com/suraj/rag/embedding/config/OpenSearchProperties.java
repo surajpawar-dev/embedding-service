@@ -15,11 +15,8 @@ public record OpenSearchProperties(
         @NotBlank String readAlias,
         @NotBlank String writeAlias,
         @Valid Bulk bulk,
-        @Valid Bootstrap bootstrap
-) {
-    public record Bulk(@Min(1) int batchSize, @Min(1) int maxPayloadMb) {
-    }
+        @Valid Bootstrap bootstrap) {
+    public record Bulk(@Min(1) int batchSize, @Min(1) int maxPayloadMb) {}
 
-    public record Bootstrap(boolean enabled, @NotBlank String indexName) {
-    }
+    public record Bootstrap(boolean enabled, @NotBlank String indexName) {}
 }

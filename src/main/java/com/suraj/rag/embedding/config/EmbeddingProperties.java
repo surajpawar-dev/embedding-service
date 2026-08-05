@@ -15,6 +15,4 @@ public record EmbeddingProperties(
         @Min(1) int batchSize,
         @Min(1) int workers,
         @Min(1) int queueCapacity,
-        Duration timeout
-) {
-}
+        Duration timeout) {}
