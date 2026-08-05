@@ -60,6 +60,179 @@ Use `mock`, `local`, or `in-memory` only for tests or isolated local development
 - Ollama with the selected embedding model pulled
 - Document Processing Service
 
+## Higher Environment Infrastructure
+
+For local platform runs, the parent `document-rag-platform/docker-compose.yml` provides PostgreSQL, LocalStack, OpenSearch, Ollama, and the Document Processing Service. The service runs with:
+
+```text
+SPRING_PROFILES_ACTIVE=local
+```
+
+In local profile, SQS polling is disabled by default for standalone test runs. The parent Docker Compose file explicitly enables it with:
+
+```text
+SQS_LISTENER_ENABLED=true
+```
+
+For dev, staging, or production, run with:
+
+```text
+SPRING_PROFILES_ACTIVE=prod
+```
+
+Do not use LocalStack endpoint values in higher environments. Leave `AWS_SQS_ENDPOINT` empty or unset so the AWS SDK uses real AWS SQS endpoints for `AWS_REGION`.
+
+### PostgreSQL
+
+Create a dedicated database for embedding jobs, chunk embedding status, retry logs, and audit records.
+
+```text
+POSTGRES_HOST=embedding-db.prod.internal
+POSTGRES_PORT=5432
+POSTGRES_DB=embedding
+POSTGRES_USER=<from-secret>
+POSTGRES_PASSWORD=<from-secret>
+```
+
+Production notes:
+
+- Use a managed PostgreSQL service where possible.
+- Enable backups and point-in-time recovery.
+- Use TLS for database traffic.
+- Keep one database/schema per environment.
+- Flyway migrations are included under `src/main/resources/db/migration`.
+
+### OpenSearch
+
+OpenSearch stores embedding vectors and serves semantic search.
+
+```text
+VECTOR_STORE_MODE=opensearch
+OPENSEARCH_ENDPOINT=https://opensearch-prod.example.com
+OPENSEARCH_USERNAME=<from-secret>
+OPENSEARCH_PASSWORD=<from-secret>
+OPENSEARCH_READ_ALIAS=document_embeddings_read
+OPENSEARCH_WRITE_ALIAS=document_embeddings_write
+```
+
+The OpenSearch index dimension must match the embedding model:
+
+```text
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_DIMENSION=768
+```
+
+If the model or dimension changes, create a new vector index and re-embed documents. Do not mix vectors from different dimensions in the same index.
+
+### Ollama Or Embedding Model Runtime
+
+The service calls Ollama-compatible embedding APIs.
+
+```text
+OLLAMA_BASE_URL=https://ollama-prod.internal.example.com
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+OLLAMA_REQUEST_TIMEOUT=PT30S
+```
+
+Production notes:
+
+- Keep the model version stable for an index.
+- Ensure enough CPU/GPU capacity for expected queue volume.
+- Use internal networking and TLS where available.
+- Scale embedding workers based on queue depth, OpenSearch bulk latency, and model latency.
+
+### Amazon SQS
+
+The service consumes document-ready events and can publish embedding-created events.
+
+```text
+AWS_REGION=us-east-1
+AWS_SQS_ENDPOINT=
+SQS_LISTENER_ENABLED=true
+DOCUMENT_READY_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/<account-id>/document-ready-prod
+EMBEDDING_CREATED_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/<account-id>/embedding-created-prod
+EVENT_PUBLISHER_MODE=sqs
+```
+
+Required AWS permissions:
+
+```text
+sqs:ReceiveMessage
+sqs:DeleteMessage
+sqs:ChangeMessageVisibility
+sqs:SendMessage
+sqs:GetQueueAttributes
+```
+
+Queue recommendations:
+
+- Configure a dead-letter queue for `document-ready`.
+- Set visibility timeout longer than the maximum expected embedding job time.
+- Keep queue names environment-specific.
+- Monitor queue depth, DLQ depth, receive errors, and processing latency.
+
+### Document Processing Service
+
+The service fetches document metadata and chunks from `rag-document-processing-service`.
+
+```text
+DOCUMENT_SERVICE_BASE_URL=https://document-processing.internal.example.com
+DOCUMENT_SERVICE_CHUNK_PAGE_SIZE=200
+DOCUMENT_SERVICE_REQUEST_TIMEOUT=PT30S
+CHUNK_CLIENT_MODE=document-service
+```
+
+Use an internal service URL or internal load balancer. This service does not need public internet access to the Document Processing Service.
+
+### Security
+
+For shared or public higher environments:
+
+```text
+SECURITY_JWT_ENABLED=true
+```
+
+Then provide the resource server/JWT issuer configuration expected by the deployment. Keep `SECURITY_JWT_ENABLED=false` only for local development or isolated private environments.
+
+### Production Example
+
+```text
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8080
+
+POSTGRES_HOST=embedding-db.prod.internal
+POSTGRES_PORT=5432
+POSTGRES_DB=embedding
+POSTGRES_USER=<from-secret>
+POSTGRES_PASSWORD=<from-secret>
+
+DOCUMENT_SERVICE_BASE_URL=https://document-processing.internal.example.com
+
+OLLAMA_BASE_URL=https://ollama-prod.internal.example.com
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_PROVIDER=ollama
+EMBEDDING_DIMENSION=768
+EMBEDDING_BATCH_SIZE=128
+
+VECTOR_STORE_MODE=opensearch
+OPENSEARCH_ENDPOINT=https://opensearch-prod.example.com
+OPENSEARCH_USERNAME=<from-secret>
+OPENSEARCH_PASSWORD=<from-secret>
+
+AWS_REGION=us-east-1
+AWS_SQS_ENDPOINT=
+SQS_LISTENER_ENABLED=true
+DOCUMENT_READY_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/<account-id>/document-ready-prod
+EMBEDDING_CREATED_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/<account-id>/embedding-created-prod
+
+JOB_STORE_MODE=jpa
+CHUNK_CLIENT_MODE=document-service
+EVENT_PUBLISHER_MODE=sqs
+SECURITY_JWT_ENABLED=true
+```
+
+AWS credentials should come from the hosting platform IAM role, not from hardcoded access keys.
+
 ## Environment Variables
 
 ```bash
