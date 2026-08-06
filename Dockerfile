@@ -3,9 +3,9 @@ WORKDIR /workspace
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
-RUN chmod +x mvnw && ./mvnw -B -DskipTests dependency:go-offline
+RUN chmod +x mvnw && ./mvnw -B -DskipTests -Dmaven.wagon.http.retryHandler.count=5 dependency:go-offline
 COPY src src
-RUN ./mvnw -B -DskipTests package
+RUN ./mvnw -B -DskipTests -Dmaven.wagon.http.retryHandler.count=5 package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
